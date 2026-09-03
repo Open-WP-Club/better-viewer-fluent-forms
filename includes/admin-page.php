@@ -6,6 +6,8 @@ defined( 'ABSPATH' ) || exit;
 class CFS_Admin_Page {
 	const SLUG = 'client-fluent-submissions';
 
+	private static $hooks = array();
+
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
@@ -21,8 +23,11 @@ class CFS_Admin_Page {
 	}
 
 	public static function menu() {
-		add_menu_page( __( 'Enquiries', 'client-fluent-submissions' ), __( 'Enquiries', 'client-fluent-submissions' ), 'cfs_view_submissions', self::SLUG, array( __CLASS__, 'render' ), 'dashicons-email-alt2', 26 );
-		add_submenu_page( self::SLUG, __( 'Enquiry settings', 'client-fluent-submissions' ), __( 'Settings', 'client-fluent-submissions' ), 'cfs_manage_submissions', self::SLUG . '-settings', array( __CLASS__, 'settings' ) );
+		// WordPress derives submenu hook suffixes from the sanitized parent menu
+		// *title*, not its slug, so the resulting hook cannot be reconstructed
+		// from self::SLUG alone. Capture what WordPress actually returns instead.
+		self::$hooks[] = add_menu_page( __( 'Enquiries', 'client-fluent-submissions' ), __( 'Enquiries', 'client-fluent-submissions' ), 'cfs_view_submissions', self::SLUG, array( __CLASS__, 'render' ), 'dashicons-email-alt2', 26 );
+		self::$hooks[] = add_submenu_page( self::SLUG, __( 'Enquiry settings', 'client-fluent-submissions' ), __( 'Settings', 'client-fluent-submissions' ), 'cfs_manage_submissions', self::SLUG . '-settings', array( __CLASS__, 'settings' ) );
 	}
 
 	public static function register_settings() {
@@ -30,7 +35,7 @@ class CFS_Admin_Page {
 	}
 
 	public static function assets( $hook ) {
-		if ( 'toplevel_page_' . self::SLUG !== $hook && self::SLUG . '_page_' . self::SLUG . '-settings' !== $hook ) { return; }
+		if ( ! in_array( $hook, self::$hooks, true ) ) { return; }
 		wp_enqueue_style( 'cfs-admin', CFS_URL . 'assets/admin.css', array(), CFS_VERSION );
 		wp_enqueue_script( 'cfs-admin', CFS_URL . 'assets/admin.js', array(), CFS_VERSION, true );
 		wp_localize_script( 'cfs-admin', 'cfsAdmin', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'cfs_update_status' ), 'fieldsNonce' => wp_create_nonce( 'cfs_form_fields' ), 'error' => __( 'The status could not be saved. Please try again.', 'client-fluent-submissions' ), 'fieldsError' => __( 'The fields could not be loaded. Check the Form ID.', 'client-fluent-submissions' ), 'pickerHeadings' => array( __( 'Fluent Forms field', 'client-fluent-submissions' ), __( 'Client label', 'client-fluent-submissions' ), __( 'In table', 'client-fluent-submissions' ), __( 'In detail', 'client-fluent-submissions' ), __( 'Section', 'client-fluent-submissions' ) ), 'defaultSection' => __( 'Information', 'client-fluent-submissions' ), 'sectionPlaceholder' => __( 'e.g. Contact', 'client-fluent-submissions' ) ) );

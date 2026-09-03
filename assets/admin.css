@@ -3,7 +3,7 @@
 .cfs-tabs { margin-bottom: 18px; }
 .cfs-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0; }
 .cfs-filters input[type="search"] { min-width: 270px; }
-.cfs-card, .cfs-detail-card { background: #fff; border: 1px solid #dcdcde; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.04); overflow: hidden; }
+.cfs-card, .cfs-detail-card { background: #fff; border: 1px solid #dcdcde; overflow: hidden; }
 .cfs-table { border: 0; box-shadow: none; }
 .cfs-table th { color: #50575e; font-weight: 600; }
 .cfs-table td { vertical-align: middle; }
@@ -21,9 +21,8 @@
 .cfs-detail-card dl > div { min-width: 0; }
 .cfs-detail-card dt { font-weight: 600; color: #50575e; margin-bottom: 5px; }
 .cfs-detail-card dd { margin: 0; overflow-wrap: anywhere; font-size: 14px; line-height: 1.55; }
-.cfs-config-card { position: relative; max-width: 780px; margin: 18px 0; padding: 16px 20px; background: #fff; border: 1px solid #dcdcde; border-radius: 8px; }
+.cfs-config-card { position: relative; max-width: 780px; margin: 18px 0; padding: 16px 20px; background: #fff; border: 1px solid #dcdcde; }
 .cfs-config-card .cfs-remove-form { position: absolute; top: 14px; right: 16px; }
-.cfs-config-card textarea { width: 100%; }
 .cfs-picker-table { margin-top: 14px; }
 .cfs-picker-table code { font-size: 11px; color: #646970; }
 .cfs-picker-table td { vertical-align: middle; }

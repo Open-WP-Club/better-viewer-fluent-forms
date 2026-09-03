@@ -1,6 +1,6 @@
 (function () {
 	'use strict';
-	function pickerRow(field) {
+	function pickerRow(field, existing) {
 		var row = document.createElement('tr');
 		row.dataset.key = field.key;
 		var fieldCell = document.createElement('td');
@@ -12,25 +12,44 @@
 		row.appendChild(fieldCell);
 		var labelCell = document.createElement('td');
 		var labelInput = document.createElement('input');
-		labelInput.type = 'text'; labelInput.className = 'regular-text cfs-client-label'; labelInput.value = field.label;
+		labelInput.type = 'text'; labelInput.className = 'regular-text cfs-client-label'; labelInput.value = existing ? existing.label : field.label;
 		labelCell.appendChild(labelInput); row.appendChild(labelCell);
-		['cfs-field-table', 'cfs-field-detail'].forEach(function (className) {
-			var cell = document.createElement('td'); var input = document.createElement('input');
-			input.type = 'checkbox'; input.className = className; cell.appendChild(input); row.appendChild(cell);
-		});
+		var tableCell = document.createElement('td'); var tableInput = document.createElement('input');
+		tableInput.type = 'checkbox'; tableInput.className = 'cfs-field-table'; tableInput.checked = !!(existing && existing.table);
+		tableCell.appendChild(tableInput); row.appendChild(tableCell);
+		var detailCell = document.createElement('td'); var detailInput = document.createElement('input');
+		detailInput.type = 'checkbox'; detailInput.className = 'cfs-field-detail'; detailInput.checked = !!(existing && existing.detail);
+		detailCell.appendChild(detailInput); row.appendChild(detailCell);
 		var sectionCell = document.createElement('td'); var section = document.createElement('input');
-		section.type = 'text'; section.className = 'cfs-field-section'; section.placeholder = cfsAdmin.sectionPlaceholder; section.value = cfsAdmin.defaultSection;
+		section.type = 'text'; section.className = 'cfs-field-section'; section.placeholder = cfsAdmin.sectionPlaceholder;
+		section.value = (existing && existing.section) || cfsAdmin.defaultSection;
 		sectionCell.appendChild(section); row.appendChild(sectionCell);
 		return row;
 	}
-	function renderPicker(container, fields) {
+	/** Capture the picker's current on-screen state before it is rebuilt, so re-loading fields does not discard unsaved edits. */
+	function readPickerState(card) {
+		var state = {};
+		card.querySelectorAll('.cfs-picker-table tbody tr').forEach(function (row) {
+			var key = row.dataset.key;
+			if (!key) { return; }
+			state[key] = {
+				label: row.querySelector('.cfs-client-label').value,
+				table: row.querySelector('.cfs-field-table').checked,
+				detail: row.querySelector('.cfs-field-detail').checked,
+				section: row.querySelector('.cfs-field-section').value
+			};
+		});
+		return state;
+	}
+	function renderPicker(container, fields, existingState) {
 		container.replaceChildren();
 		var table = document.createElement('table'); table.className = 'widefat striped cfs-picker-table';
 		var headings = cfsAdmin.pickerHeadings;
 		var thead = document.createElement('thead'); var headRow = document.createElement('tr');
 		headings.forEach(function (text) { var th = document.createElement('th'); th.textContent = text; headRow.appendChild(th); });
 		thead.appendChild(headRow); table.appendChild(thead);
-		var body = document.createElement('tbody'); fields.forEach(function (field) { body.appendChild(pickerRow(field)); });
+		var body = document.createElement('tbody');
+		fields.forEach(function (field) { body.appendChild(pickerRow(field, existingState && existingState[field.key])); });
 		table.appendChild(body); container.appendChild(table);
 	}
 	function serializePicker(card) {
@@ -53,11 +72,12 @@
 		var card = button.closest('.cfs-config-card');
 		var formId = card.querySelector('.cfs-form-id').value;
 		if (!formId) { return; }
+		var existingState = readPickerState(card);
 		button.disabled = true;
 		var data = new URLSearchParams({ action: 'cfs_form_fields', nonce: cfsAdmin.fieldsNonce, form_id: formId });
 		fetch(cfsAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: data })
 			.then(function (response) { return response.json(); })
-			.then(function (response) { if (!response.success) { throw new Error(); } renderPicker(card.querySelector('.cfs-field-picker'), response.data.fields); })
+			.then(function (response) { if (!response.success) { throw new Error(); } renderPicker(card.querySelector('.cfs-field-picker'), response.data.fields, existingState); })
 			.catch(function () { window.alert(cfsAdmin.fieldsError); })
 			.finally(function () { button.disabled = false; });
 	}
