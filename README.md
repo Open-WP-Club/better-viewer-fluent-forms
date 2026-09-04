@@ -120,13 +120,3 @@ languages/                     Translation files
 6. Update each status and confirm that the status persists after refresh.
 7. Test with a user that has viewer access only, then a user with manage access.
 8. Change the WordPress site language to Bulgarian and verify the translated UI.
-
----
-
-## Български
-
-**Better Viewer for Fluent Forms** е малък, удобен за клиенти WordPress екран за преглед на запитвания от Fluent Forms. Данните остават във Fluent Forms; добавя се само един meta запис за статуса на запитването.
-
-Настройването става от **Запитвания → Настройки**: добавяте Form ID, зареждате полетата и с picker-а избирате техните етикети, показване в таблица/детайли и секции. Не е нужен JSON или PHP config файл.
-
-За пълни инструкции за инсталация, права, статуси и ръчно тестване използвайте английската документация по-горе.
