@@ -5,6 +5,7 @@ defined( 'ABSPATH' ) || exit;
 
 class CFS_Submissions {
 	const STATUS_META_KEY = '_cfs_client_status';
+	const NOTES_META_KEY = '_cfs_internal_notes';
 
 	public static function statuses() {
 		return array(
@@ -124,6 +125,38 @@ class CFS_Submissions {
 		return (int) \FluentForm\App\Models\Submission::where( 'form_id', absint( $form_id ) )
 			->where( 'status', 'unread' )
 			->count();
+	}
+
+	public static function stats( $form_id ) {
+		$form_id = absint( $form_id );
+		$base = static function() use ( $form_id ) { return \FluentForm\App\Models\Submission::where( 'form_id', $form_id )->where( 'status', '!=', 'trashed' ); };
+		$stats = array( 'total' => (int) $base()->count(), 'unread' => (int) $base()->where( 'status', 'unread' )->count() );
+		foreach ( array( 'in_progress', 'completed', 'archived' ) as $status ) {
+			$stats[ $status ] = (int) $base()->whereHas( 'submissionMeta', static function( $meta ) use ( $status ) { $meta->where( 'meta_key', self::STATUS_META_KEY )->where( 'value', $status ); } )->count();
+		}
+		$stats['new'] = max( 0, $stats['total'] - $stats['in_progress'] - $stats['completed'] - $stats['archived'] );
+		return $stats;
+	}
+
+	public static function notes( $submission_id ) {
+		$row = \FluentForm\App\Models\SubmissionMeta::where( 'response_id', absint( $submission_id ) )->where( 'meta_key', self::NOTES_META_KEY )->first();
+		$notes = $row ? json_decode( $row->value, true ) : array();
+		return is_array( $notes ) ? $notes : array();
+	}
+
+	public static function add_note( $submission_id, $form_id, $text ) {
+		if ( ! self::find( $submission_id, $form_id ) ) { return false; }
+		$notes = self::notes( $submission_id );
+		$notes[] = array( 'text' => sanitize_textarea_field( $text ), 'user_id' => get_current_user_id(), 'created_at' => current_time( 'mysql' ) );
+		\FluentForm\App\Models\SubmissionMeta::persist( absint( $submission_id ), self::NOTES_META_KEY, wp_json_encode( $notes ), absint( $form_id ) );
+		return true;
+	}
+
+	public static function duplicate_count( $form_id, $submission_id, $needle ) {
+		if ( '' === $needle ) { return 0; }
+		global $wpdb;
+		return (int) \FluentForm\App\Models\Submission::where( 'form_id', absint( $form_id ) )->where( 'id', '!=', absint( $submission_id ) )
+			->where( 'status', '!=', 'trashed' )->where( 'response', 'LIKE', '%' . $wpdb->esc_like( $needle ) . '%' )->count();
 	}
 
 	private static function attach_statuses( $items ) {

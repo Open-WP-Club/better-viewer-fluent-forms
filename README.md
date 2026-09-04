@@ -24,6 +24,11 @@ It uses Fluent Forms as the source of truth. Submission responses are never copi
 - Native Fluent Forms read/unread tracking with an unread menu counter.
 - CSV export of the current filtered results.
 - Bulk read/unread and workflow status actions.
+- Dashboard counters for total, unread, new, in-progress, and completed enquiries.
+- One-click email, phone, and WhatsApp actions detected from submission data.
+- Internal notes with author and timestamp.
+- Admin email notifications for new enquiries from configured forms.
+- Non-destructive duplicate-contact and multi-link spam warnings.
 - Four simple workflow statuses: **New**, **In progress**, **Completed**, and **Archived**.
 - A distraction-free submission detail screen with labelled sections.
 - All read and unread submissions are listed; only trashed entries are omitted.

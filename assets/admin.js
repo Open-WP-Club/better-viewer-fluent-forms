@@ -116,6 +116,20 @@
 			removeButton.closest('.cfs-config-card').remove();
 			return;
 		}
+		var moveUp = event.target.closest('.cfs-move-form-up');
+		if (moveUp) {
+			var upCard = moveUp.closest('.cfs-config-card');
+			var previous = upCard.previousElementSibling;
+			if (previous) { upCard.parentNode.insertBefore(upCard, previous); }
+			return;
+		}
+		var moveDown = event.target.closest('.cfs-move-form-down');
+		if (moveDown) {
+			var downCard = moveDown.closest('.cfs-config-card');
+			var next = downCard.nextElementSibling;
+			if (next) { downCard.parentNode.insertBefore(next, downCard); }
+			return;
+		}
 		var button = event.target.closest('.cfs-status-actions button');
 		if (!button) { return; }
 		event.preventDefault();
