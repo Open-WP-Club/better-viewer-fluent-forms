@@ -5,14 +5,14 @@
  * Author: OpenWPClub.com
  * Author URI: https://openwpclub.com
  * Plugin URI: https://openwpclub.com/plugins/client-fluent-submissions/
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires PHP: 7.4
  * Text Domain: client-fluent-submissions
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CFS_VERSION', '1.0.0' );
+define( 'CFS_VERSION', '1.0.1' );
 define( 'CFS_FILE', __FILE__ );
 define( 'CFS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CFS_URL', plugin_dir_url( __FILE__ ) );
