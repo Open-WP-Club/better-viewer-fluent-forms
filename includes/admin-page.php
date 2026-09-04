@@ -46,7 +46,7 @@ class CFS_Admin_Page {
 		if ( ! in_array( $hook, self::$hooks, true ) ) { return; }
 		wp_enqueue_style( 'cfs-admin', CFS_URL . 'assets/admin.css', array(), CFS_VERSION );
 		wp_enqueue_script( 'cfs-admin', CFS_URL . 'assets/admin.js', array(), CFS_VERSION, true );
-		wp_localize_script( 'cfs-admin', 'cfsAdmin', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'cfs_update_status' ), 'fieldsNonce' => wp_create_nonce( 'cfs_form_fields' ), 'error' => __( 'The status could not be saved. Please try again.', 'client-fluent-submissions' ), 'fieldsError' => __( 'The fields could not be loaded for this form.', 'client-fluent-submissions' ), 'pickerHeadings' => array( __( 'Fluent Forms field', 'client-fluent-submissions' ), __( 'Client label', 'client-fluent-submissions' ), __( 'In table', 'client-fluent-submissions' ), __( 'In detail', 'client-fluent-submissions' ), __( 'Section', 'client-fluent-submissions' ) ), 'defaultSection' => __( 'Information', 'client-fluent-submissions' ), 'sectionPlaceholder' => __( 'e.g. Contact', 'client-fluent-submissions' ) ) );
+		wp_localize_script( 'cfs-admin', 'cfsAdmin', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'cfs_update_status' ), 'fieldsNonce' => wp_create_nonce( 'cfs_form_fields' ), 'error' => __( 'The status could not be saved. Please try again.', 'client-fluent-submissions' ), 'fieldsError' => __( 'The fields could not be loaded for this form.', 'client-fluent-submissions' ), 'unsaved' => __( 'You have unsaved changes.', 'client-fluent-submissions' ), 'pickerHeadings' => array( __( 'Fluent Forms field', 'client-fluent-submissions' ), __( 'Client label', 'client-fluent-submissions' ), __( 'In table', 'client-fluent-submissions' ), __( 'In detail', 'client-fluent-submissions' ), __( 'Section', 'client-fluent-submissions' ) ), 'toggleAll' => __( 'Select all fields', 'client-fluent-submissions' ), 'defaultSection' => __( 'Information', 'client-fluent-submissions' ), 'sectionPlaceholder' => __( 'e.g. Contact', 'client-fluent-submissions' ) ) );
 	}
 
 	public static function dependency_notice() {
@@ -74,6 +74,7 @@ class CFS_Admin_Page {
 		$available_forms = self::available_forms();
 		echo '<div class="wrap cfs-wrap"><h1>' . esc_html__( 'Enquiry settings', 'client-fluent-submissions' ) . '</h1>';
 		echo '<p>' . esc_html__( 'Choose one of the available Fluent Forms forms and select what the client sees. No form ID or JSON editing is needed.', 'client-fluent-submissions' ) . '</p>';
+		echo '<div class="notice notice-warning inline cfs-unsaved-notice" hidden><p><strong>' . esc_html__( 'You have unsaved changes.', 'client-fluent-submissions' ) . '</strong> ' . esc_html__( 'Save the settings before leaving this page.', 'client-fluent-submissions' ) . '</p></div>';
 		if ( ! $available_forms ) { echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'No available Fluent Forms forms were found.', 'client-fluent-submissions' ) . '</p></div>'; }
 		echo '<form method="post" action="options.php">'; settings_fields( 'cfs_settings' ); echo '<div id="cfs-form-configs">';
 		foreach ( $forms as $id => $config ) { self::settings_row( $id, $config, $available_forms ); }
@@ -114,14 +115,13 @@ class CFS_Admin_Page {
 		$form = \FluentForm\App\Models\Form::find( absint( $form_id ) );
 		if ( ! $form ) { return array(); }
 		$inputs = \FluentForm\App\Modules\Form\FormFieldsParser::getEntryInputs( $form, array( 'admin_label' ) );
+		$labels = \FluentForm\App\Modules\Form\FormFieldsParser::getAdminLabels( $form, $inputs );
 		$fields = array();
 		foreach ( $inputs as $key => $input ) {
 			$key = sanitize_text_field( (string) $key );
 			if ( ! $key ) { continue; }
-			$label = $key;
-			if ( is_array( $input ) ) {
-				$label = ! empty( $input['admin_label'] ) ? $input['admin_label'] : ( $input['label'] ?? $key );
-			}
+			$label = $labels[ $key ] ?? $key;
+			if ( is_array( $label ) ) { $label = implode( ' / ', array_filter( array_map( 'sanitize_text_field', $label ) ) ); }
 			$label = sanitize_text_field( $label );
 			$fields[] = array( 'key' => $key, 'label' => $label );
 		}
@@ -133,7 +133,10 @@ class CFS_Admin_Page {
 		if ( ! $fields ) { echo '<p class="description cfs-picker-empty">' . esc_html__( 'Select a form to load its fields.', 'client-fluent-submissions' ) . '</p>'; return; }
 		$detail = array();
 		foreach ( $sections as $section => $section_fields ) { foreach ( $section_fields as $key => $label ) { $detail[ $key ] = array( 'section' => $section, 'label' => $label ); } }
-		echo '<table class="widefat striped cfs-picker-table"><thead><tr><th>' . esc_html__( 'Fluent Forms field', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Client label', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'In table', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'In detail', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Section', 'client-fluent-submissions' ) . '</th></tr></thead><tbody>';
+		$field_keys = array_column( $fields, 'key' );
+		$all_table = count( array_intersect( $field_keys, array_keys( $columns ) ) ) === count( $field_keys );
+		$all_detail = count( array_intersect( $field_keys, array_keys( $detail ) ) ) === count( $field_keys );
+		echo '<table class="widefat striped cfs-picker-table"><thead><tr><th>' . esc_html__( 'Fluent Forms field', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Client label', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'In table', 'client-fluent-submissions' ) . '<br><input type="checkbox" class="cfs-toggle-column" data-target=".cfs-field-table" aria-label="' . esc_attr__( 'Select all fields', 'client-fluent-submissions' ) . '" ' . checked( $all_table, true, false ) . '></th><th>' . esc_html__( 'In detail', 'client-fluent-submissions' ) . '<br><input type="checkbox" class="cfs-toggle-column" data-target=".cfs-field-detail" aria-label="' . esc_attr__( 'Select all fields', 'client-fluent-submissions' ) . '" ' . checked( $all_detail, true, false ) . '></th><th>' . esc_html__( 'Section', 'client-fluent-submissions' ) . '</th></tr></thead><tbody>';
 		foreach ( $fields as $field ) {
 			$key = $field['key']; $saved = $detail[ $key ] ?? array(); $label = $columns[ $key ] ?? ( $saved['label'] ?? $field['label'] ); $section = $saved['section'] ?? __( 'Information', 'client-fluent-submissions' );
 			echo '<tr data-key="' . esc_attr( $key ) . '"><td><strong>' . esc_html( $field['label'] ) . '</strong><br><code>' . esc_html( $key ) . '</code></td><td><input class="regular-text cfs-client-label" type="text" value="' . esc_attr( $label ) . '"></td><td><input class="cfs-field-table" type="checkbox" ' . checked( isset( $columns[ $key ] ), true, false ) . '></td><td><input class="cfs-field-detail" type="checkbox" ' . checked( isset( $detail[ $key ] ), true, false ) . '></td><td><input class="cfs-field-section" type="text" value="' . esc_attr( $section ) . '" placeholder="' . esc_attr__( 'e.g. Contact', 'client-fluent-submissions' ) . '"></td></tr>';

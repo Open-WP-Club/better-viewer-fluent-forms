@@ -20,6 +20,7 @@ jobs:
         # Keep the distributed plugin folder and ZIP independent of the GitHub
         # repository name so WordPress users always receive the plugin name.
         echo "plugin_slug=client-fluent-submissions" >> $GITHUB_OUTPUT
+        echo "plugin_name=Client Fluent Submissions" >> $GITHUB_OUTPUT
         echo "release_id=${{ github.event.release.id }}" >> $GITHUB_OUTPUT
         echo "upload_url=${{ github.event.release.upload_url }}" >> $GITHUB_OUTPUT
         
@@ -104,6 +105,6 @@ jobs:
             owner,
             repo,
             release_id,
-            name: `${{ steps.info.outputs.version }}`,
+            name: `${{ steps.info.outputs.plugin_name }} ${{ steps.info.outputs.version }}`,
             body: release.body + buildInfo
           });

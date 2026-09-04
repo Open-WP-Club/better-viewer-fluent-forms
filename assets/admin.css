@@ -1,6 +1,8 @@
 .cfs-wrap { width: auto; max-width: none; }
 .cfs-wrap h1 { margin: 1.25rem 0 1rem; }
 .cfs-tabs { margin-bottom: 1.125rem; }
+.cfs-unsaved-notice[hidden] { display: none; }
+.cfs-unsaved-notice { margin: 1rem 0 !important; }
 .cfs-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
 .cfs-stat { padding: 1rem; border: 0.0625rem solid #dcdcde; background: #fff; }
 .cfs-stat span { display: block; color: #646970; }
@@ -49,5 +51,7 @@
 .cfs-picker-table { width: 100%; margin-top: 0.875rem; table-layout: auto; }
 .cfs-picker-table code { font-size: 0.6875rem; color: #646970; }
 .cfs-picker-table td { vertical-align: middle; }
+.cfs-picker-table th { vertical-align: bottom; }
+.cfs-toggle-column { margin-top: 0.4rem !important; }
 .cfs-picker-table .cfs-field-section { width: 100%; min-width: 8.125rem; }
 @media (max-width: 48.875rem) { .cfs-filters input, .cfs-filters select { width: 100%; max-width: none; flex-basis: 100%; } .cfs-table { min-width: 45rem; } .cfs-card { overflow-x: auto; } .cfs-detail-card { padding: 1rem; } .cfs-detail-card dl { grid-template-columns: 1fr; } }

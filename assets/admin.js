@@ -1,5 +1,20 @@
 (function () {
 	'use strict';
+	var settingsForm = document.querySelector('form[action="options.php"]');
+	var settingsDirty = false;
+	var settingsSubmitting = false;
+	function markSettingsDirty() {
+		if (!settingsForm) { return; }
+		settingsDirty = true;
+		var notice = document.querySelector('.cfs-unsaved-notice');
+		if (notice) { notice.hidden = false; }
+	}
+	window.addEventListener('beforeunload', function (event) {
+		if (!settingsDirty || settingsSubmitting) { return; }
+		event.preventDefault();
+		event.returnValue = cfsAdmin.unsaved;
+		return cfsAdmin.unsaved;
+	});
 	function pickerRow(field, existing) {
 		var row = document.createElement('tr');
 		row.dataset.key = field.key;
@@ -46,7 +61,18 @@
 		var table = document.createElement('table'); table.className = 'widefat striped cfs-picker-table';
 		var headings = cfsAdmin.pickerHeadings;
 		var thead = document.createElement('thead'); var headRow = document.createElement('tr');
-		headings.forEach(function (text) { var th = document.createElement('th'); th.textContent = text; headRow.appendChild(th); });
+		headings.forEach(function (text, index) {
+			var th = document.createElement('th'); th.textContent = text;
+			if (index === 2 || index === 3) {
+				th.appendChild(document.createElement('br'));
+				var toggle = document.createElement('input');
+				toggle.type = 'checkbox'; toggle.className = 'cfs-toggle-column';
+				toggle.dataset.target = index === 2 ? '.cfs-field-table' : '.cfs-field-detail';
+				toggle.setAttribute('aria-label', cfsAdmin.toggleAll);
+				th.appendChild(toggle);
+			}
+			headRow.appendChild(th);
+		});
 		thead.appendChild(headRow); table.appendChild(thead);
 		var body = document.createElement('tbody');
 		fields.forEach(function (field) { body.appendChild(pickerRow(field, existingState && existingState[field.key])); });
@@ -82,6 +108,11 @@
 			.finally(function () { button.disabled = false; });
 	}
 	document.addEventListener('change', function (event) {
+		if (settingsForm && settingsForm.contains(event.target)) { markSettingsDirty(); }
+		if (event.target.matches('.cfs-toggle-column')) {
+			event.target.closest('table').querySelectorAll(event.target.dataset.target).forEach(function (checkbox) { checkbox.checked = event.target.checked; });
+			return;
+		}
 		if (event.target.matches('.cfs-select-all')) {
 			event.target.closest('table').querySelectorAll('tbody input[type="checkbox"]').forEach(function (checkbox) { checkbox.checked = event.target.checked; });
 			return;
@@ -109,11 +140,13 @@
 				var index = String(Date.now());
 				target.insertAdjacentHTML('beforeend', template.innerHTML.split('__INDEX__').join(index));
 			}
+			markSettingsDirty();
 			return;
 		}
 		var removeButton = event.target.closest('.cfs-remove-form');
 		if (removeButton) {
 			removeButton.closest('.cfs-config-card').remove();
+			markSettingsDirty();
 			return;
 		}
 		var moveUp = event.target.closest('.cfs-move-form-up');
@@ -121,6 +154,7 @@
 			var upCard = moveUp.closest('.cfs-config-card');
 			var previous = upCard.previousElementSibling;
 			if (previous) { upCard.parentNode.insertBefore(upCard, previous); }
+			if (previous) { markSettingsDirty(); }
 			return;
 		}
 		var moveDown = event.target.closest('.cfs-move-form-down');
@@ -128,6 +162,7 @@
 			var downCard = moveDown.closest('.cfs-config-card');
 			var next = downCard.nextElementSibling;
 			if (next) { downCard.parentNode.insertBefore(next, downCard); }
+			if (next) { markSettingsDirty(); }
 			return;
 		}
 		var button = event.target.closest('.cfs-status-actions button');
@@ -155,5 +190,10 @@
 	document.addEventListener('submit', function (event) {
 		if (!event.target.matches('form[action="options.php"]')) { return; }
 		event.target.querySelectorAll('.cfs-config-card').forEach(serializePicker);
+		settingsSubmitting = true;
+		settingsDirty = false;
+	});
+	document.addEventListener('input', function (event) {
+		if (settingsForm && settingsForm.contains(event.target)) { markSettingsDirty(); }
 	});
 }());
