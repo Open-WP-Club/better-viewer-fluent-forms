@@ -197,16 +197,16 @@ class CFS_Admin_Page {
 		}
 		echo '<div class="cfs-card"><table class="wp-list-table widefat fixed striped cfs-table"><thead><tr>';
 		if ( $can_manage ) { echo '<td class="manage-column check-column"><input type="checkbox" class="cfs-select-all"></td>'; }
-		echo '<th>ID</th><th>' . esc_html__( 'Read', 'client-fluent-submissions' ) . '</th>';
+		echo '<th>ID</th>';
 		foreach ( $config['columns'] as $label ) { echo '<th>' . esc_html( $label ) . '</th>'; }
-		echo '<th>' . esc_html__( 'Date', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Status', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Actions', 'client-fluent-submissions' ) . '</th></tr></thead><tbody>';
+		echo '<th>' . esc_html__( 'Date', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Actions', 'client-fluent-submissions' ) . '</th></tr></thead><tbody>';
 		foreach ( $data['items'] as $item ) {
 			$url = add_query_arg( array( 'page' => self::SLUG, 'form_id' => $config['id'], 'submission_id' => $item->id ), admin_url( 'admin.php' ) );
 			echo '<tr class="' . ( $item->cfs_is_read ? '' : 'cfs-row-unread' ) . '">';
 			if ( $can_manage ) { echo '<th class="check-column"><input type="checkbox" name="submission_ids[]" value="' . esc_attr( $item->id ) . '"></th>'; }
-			echo '<td>#' . esc_html( $item->id ) . '</td><td>' . esc_html( $item->cfs_is_read ? __( 'Read', 'client-fluent-submissions' ) : __( 'Unread', 'client-fluent-submissions' ) ) . '</td>';
+			echo '<td>#' . esc_html( $item->id ) . '</td>';
 			foreach ( $config['columns'] as $key => $label ) { echo '<td>' . self::short_value( self::field_value( $item->cfs_response, $key ) ) . '</td>'; }
-			echo '<td>' . esc_html( self::date_display( $item->created_at ) ) . '</td><td>' . self::badge( $item->cfs_status ) . '</td><td><a class="button button-secondary" href="' . esc_url( $url ) . '">' . esc_html__( 'View', 'client-fluent-submissions' ) . '</a></td></tr>';
+			echo '<td>' . esc_html( self::date_display( $item->created_at ) ) . '</td><td><a class="button button-secondary" href="' . esc_url( $url ) . '">' . esc_html__( 'View', 'client-fluent-submissions' ) . '</a></td></tr>';
 		}
 		echo '</tbody></table></div></form>';
 		if ( $total_pages > 1 ) { echo '<div class="tablenav"><div class="tablenav-pages">' . wp_kses_post( paginate_links( array( 'base' => add_query_arg( 'paged', '%#%' ), 'format' => '', 'current' => max( 1, $args['page'] ), 'total' => $total_pages ) ) ) . '</div></div>'; }

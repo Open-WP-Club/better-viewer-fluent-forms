@@ -15,7 +15,8 @@
 .cfs-table th { color: #50575e; font-weight: 600; }
 .cfs-table td { vertical-align: middle; }
 .cfs-table .check-column { width: 2.2rem; }
-.cfs-row-unread > th, .cfs-row-unread > td { font-weight: 600; background: #f0f7ff; }
+.cfs-row-unread > th, .cfs-row-unread > td { font-weight: 600; background: #e7f5ff !important; }
+.cfs-row-unread > :first-child { box-shadow: inset 0.25rem 0 0 #2271b1; }
 .cfs-bulk { margin: 0.75rem 0 0.5rem; }
 .cfs-badge { display: inline-block; padding: 0.25rem 0.5625rem; border-radius: 62.4375rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap; background: #f0f0f1; color: #3c434a; }
 .cfs-status-new { background: #e7f5ff; color: #075985; }
