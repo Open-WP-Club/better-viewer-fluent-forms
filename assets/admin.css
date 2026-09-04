@@ -7,6 +7,9 @@
 .cfs-table { border: 0; box-shadow: none; }
 .cfs-table th { color: #50575e; font-weight: 600; }
 .cfs-table td { vertical-align: middle; }
+.cfs-table .check-column { width: 2.2em; }
+.cfs-row-unread > th, .cfs-row-unread > td { font-weight: 600; background: #f0f7ff; }
+.cfs-bulk { margin: 12px 0 8px; }
 .cfs-badge { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: #f0f0f1; color: #3c434a; }
 .cfs-status-new { background: #e7f5ff; color: #075985; }
 .cfs-status-in_progress { background: #fff4d6; color: #854d0e; }
@@ -23,6 +26,7 @@
 .cfs-detail-card dd { margin: 0; overflow-wrap: anywhere; font-size: 14px; line-height: 1.55; }
 .cfs-config-card { position: relative; max-width: 780px; margin: 18px 0; padding: 16px 20px; background: #fff; border: 1px solid #dcdcde; }
 .cfs-config-card .cfs-remove-form { position: absolute; top: 14px; right: 16px; }
+.cfs-config-card .cfs-form-id { min-width: 320px; }
 .cfs-picker-table { margin-top: 14px; }
 .cfs-picker-table code { font-size: 11px; color: #646970; }
 .cfs-picker-table td { vertical-align: middle; }

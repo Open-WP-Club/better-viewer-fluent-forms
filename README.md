@@ -20,11 +20,17 @@ It uses Fluent Forms as the source of truth. Submission responses are never copi
 
 - Clean top-level **Enquiries** admin menu with a responsive, readable table.
 - Server-side pagination, search, date range filtering, and status filtering.
+- Field-specific search, read/unread filters, and quick date periods.
+- Native Fluent Forms read/unread tracking with an unread menu counter.
+- CSV export of the current filtered results.
+- Bulk read/unread and workflow status actions.
 - Four simple workflow statuses: **New**, **In progress**, **Completed**, and **Archived**.
 - A distraction-free submission detail screen with labelled sections.
+- All read and unread submissions are listed; only trashed entries are omitted.
 - Clickable links for uploaded files and URL values.
 - Support for multiple Fluent Forms, displayed as tabs.
 - A visual field picker: choose fields, client-facing labels, list visibility, detail visibility, and sections—without writing JSON or PHP configuration.
+- Field labels are copied from Fluent Forms automatically and remain editable.
 - English base language and included Bulgarian (`bg_BG`) translation.
 - Capability checks, Fluent Forms ACL checks, nonces for every AJAX request, sanitised input, and escaped output.
 
@@ -57,7 +63,7 @@ It uses Fluent Forms as the source of truth. Submission responses are never copi
 
 1. Open **Enquiries → Settings**.
 2. Click **Add form**.
-3. Enter the Fluent Form ID and click **Load fields**.
+3. Select one of the available Fluent Forms forms. Its fields load automatically.
 4. For each available field, set the client-facing label and select whether it should appear in the list and/or the detail view.
 5. Assign detail fields to sections, such as `Contact`, `Information`, or `Message`.
 6. Save the settings.

@@ -81,6 +81,25 @@
 			.catch(function () { window.alert(cfsAdmin.fieldsError); })
 			.finally(function () { button.disabled = false; });
 	}
+	document.addEventListener('change', function (event) {
+		if (event.target.matches('.cfs-select-all')) {
+			event.target.closest('table').querySelectorAll('tbody input[type="checkbox"]').forEach(function (checkbox) { checkbox.checked = event.target.checked; });
+			return;
+		}
+		if (event.target.matches('select[name="date_preset"]') && event.target.value) {
+			var filters = event.target.closest('.cfs-filters');
+			filters.querySelector('input[name="date_from"]').value = '';
+			filters.querySelector('input[name="date_to"]').value = '';
+			return;
+		}
+		if (!event.target.matches('.cfs-form-id')) { return; }
+		var select = event.target;
+		var card = select.closest('.cfs-config-card');
+		var title = card.querySelector('input[name$="[title]"]');
+		var option = select.options[select.selectedIndex];
+		if (title && option && option.dataset.title) { title.value = option.dataset.title; }
+		if (select.value) { loadFields(select); }
+	});
 	document.addEventListener('click', function (event) {
 		var addButton = event.target.closest('#cfs-add-form');
 		if (addButton) {
@@ -97,8 +116,6 @@
 			removeButton.closest('.cfs-config-card').remove();
 			return;
 		}
-		var loadButton = event.target.closest('.cfs-load-fields');
-		if (loadButton) { loadFields(loadButton); return; }
 		var button = event.target.closest('.cfs-status-actions button');
 		if (!button) { return; }
 		event.preventDefault();

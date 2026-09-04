@@ -42,6 +42,8 @@ class CFS_Submissions {
 		$form_id = absint( $form_id );
 		$page    = max( 1, absint( $args['page'] ?? 1 ) );
 		$per_page = min( 100, max( 10, absint( $args['per_page'] ?? 20 ) ) );
+		// This intentionally includes both Fluent Forms `read` and `unread`
+		// submissions. Only entries moved to the trash are omitted.
 		$query = \FluentForm\App\Models\Submission::where( 'form_id', $form_id )
 			->where( 'status', '!=', 'trashed' );
 
@@ -56,8 +58,17 @@ class CFS_Submissions {
 			$like = $wpdb->esc_like( $search );
 			// Fluent Forms stores submitted values in its response JSON. This keeps
 			// search portable across MySQL/MariaDB versions and uses its model query.
-			$query->where( 'response', 'LIKE', '%' . $like . '%' );
+			$field = sanitize_text_field( $args['search_field'] ?? '' );
+			if ( $field ) {
+				$field_like = $wpdb->esc_like( '"' . $field . '"' );
+				$query->where( 'response', 'LIKE', '%' . $field_like . '%' . $like . '%' );
+			} else {
+				$query->where( 'response', 'LIKE', '%' . $like . '%' );
+			}
 		}
+
+		$read = sanitize_key( $args['read'] ?? '' );
+		if ( in_array( $read, array( 'read', 'unread' ), true ) ) { $query->where( 'status', $read ); }
 
 		$status = sanitize_key( $args['status'] ?? '' );
 		if ( $status && isset( self::statuses()[ $status ] ) ) {
@@ -103,6 +114,18 @@ class CFS_Submissions {
 		return true;
 	}
 
+	public static function set_read( $submission_id, $form_id, $read = true ) {
+		if ( ! self::find( $submission_id, $form_id ) ) { return false; }
+		return false !== \FluentForm\App\Models\Submission::where( 'id', absint( $submission_id ) )
+			->where( 'form_id', absint( $form_id ) )->update( array( 'status' => $read ? 'read' : 'unread' ) );
+	}
+
+	public static function unread_count( $form_id ) {
+		return (int) \FluentForm\App\Models\Submission::where( 'form_id', absint( $form_id ) )
+			->where( 'status', 'unread' )
+			->count();
+	}
+
 	private static function attach_statuses( $items ) {
 		$ids = array();
 		foreach ( $items as $item ) { $ids[] = absint( $item->id ); }
@@ -110,10 +133,13 @@ class CFS_Submissions {
 		if ( $ids ) {
 			$meta = \FluentForm\App\Models\SubmissionMeta::whereIn( 'response_id', $ids )
 				->where( 'meta_key', self::STATUS_META_KEY )->get();
-			foreach ( $meta as $row ) { $values[ absint( $row->response_id ) ] = sanitize_key( $row->value ); }
+			foreach ( $meta as $row ) {
+				$values[ absint( $row->response_id ) ] = sanitize_key( $row->value );
+			}
 		}
 		foreach ( $items as $item ) {
 			$item->cfs_status = isset( $values[ $item->id ], self::statuses()[ $values[ $item->id ] ] ) ? $values[ $item->id ] : 'new';
+			$item->cfs_is_read = 'read' === $item->status;
 			$item->cfs_response = json_decode( $item->response, true );
 			if ( ! is_array( $item->cfs_response ) ) { $item->cfs_response = array(); }
 		}
