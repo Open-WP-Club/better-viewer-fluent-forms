@@ -1,12 +1,7 @@
 # Better Viewer for Fluent Forms
 
-> A small, client-friendly WordPress admin interface for Fluent Forms submissions.
-
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759b?logo=wordpress)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php)](https://www.php.net/)
-[![Fluent%20Forms](https://img.shields.io/badge/Requires-Fluent%20Forms-4b2e83)](https://fluentforms.com/)
-
-**Repository:** [Open-WP-Club/better-viewer-fluent-forms](https://github.com/Open-WP-Club/better-viewer-fluent-forms)
 
 ---
 
