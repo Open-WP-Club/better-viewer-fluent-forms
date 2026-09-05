@@ -107,6 +107,50 @@
 			.catch(function () { window.alert(cfsAdmin.fieldsError); })
 			.finally(function () { button.disabled = false; });
 	}
+	function setInlineExpanded(row, expanded) {
+		var toggle = row.querySelector('.cfs-inline-toggle');
+		row.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+		if (toggle) {
+			toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+			toggle.textContent = expanded ? cfsAdmin.close : cfsAdmin.view;
+		}
+	}
+	function toggleInlineDetail(row) {
+		var detailRow = row.nextElementSibling;
+		if (detailRow && detailRow.classList.contains('cfs-inline-detail-row')) {
+			if (detailRow.classList.contains('cfs-inline-error')) {
+				detailRow.remove();
+				toggleInlineDetail(row);
+				return;
+			}
+			detailRow.hidden = !detailRow.hidden;
+			setInlineExpanded(row, !detailRow.hidden);
+			return;
+		}
+		detailRow = document.createElement('tr');
+		detailRow.className = 'cfs-inline-detail-row';
+		var cell = document.createElement('td');
+		cell.colSpan = Number(row.dataset.colspan) || row.cells.length;
+		var content = document.createElement('div');
+		content.className = 'cfs-inline-detail';
+		content.textContent = cfsAdmin.loading;
+		cell.appendChild(content); detailRow.appendChild(cell);
+		row.parentNode.insertBefore(detailRow, row.nextSibling);
+		setInlineExpanded(row, true);
+		var data = new FormData();
+		data.append('action', 'cfs_submission_detail');
+		data.append('nonce', cfsAdmin.detailNonce);
+		data.append('form_id', row.dataset.form);
+		data.append('submission_id', row.dataset.submission);
+		fetch(cfsAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
+			.then(function (response) { return response.json(); })
+			.then(function (response) {
+				if (!response.success || !response.data.html) { throw new Error(); }
+				content.innerHTML = response.data.html;
+				row.classList.remove('cfs-row-unread');
+			})
+			.catch(function () { detailRow.classList.add('cfs-inline-error'); content.textContent = cfsAdmin.detailError; });
+	}
 	document.addEventListener('change', function (event) {
 		if (settingsForm && settingsForm.contains(event.target)) { markSettingsDirty(); }
 		if (event.target.matches('.cfs-toggle-column')) {
@@ -165,6 +209,18 @@
 			if (next) { markSettingsDirty(); }
 			return;
 		}
+		var inlineToggle = event.target.closest('.cfs-inline-toggle');
+		if (inlineToggle) {
+			if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) { return; }
+			event.preventDefault();
+			toggleInlineDetail(inlineToggle.closest('.cfs-submission-row'));
+			return;
+		}
+		var submissionRow = event.target.closest('.cfs-submission-row');
+		if (submissionRow && !event.target.closest('a, button, input, select, textarea, label')) {
+			toggleInlineDetail(submissionRow);
+			return;
+		}
 		var button = event.target.closest('.cfs-status-actions button');
 		if (!button) { return; }
 		event.preventDefault();
@@ -195,5 +251,10 @@
 	});
 	document.addEventListener('input', function (event) {
 		if (settingsForm && settingsForm.contains(event.target)) { markSettingsDirty(); }
+	});
+	document.addEventListener('keydown', function (event) {
+		if ((event.key !== 'Enter' && event.key !== ' ') || !event.target.matches('.cfs-submission-row')) { return; }
+		event.preventDefault();
+		toggleInlineDetail(event.target);
 	});
 }());

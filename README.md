@@ -31,6 +31,7 @@ It uses Fluent Forms as the source of truth. Submission responses are never copi
 - Non-destructive duplicate-contact and multi-link spam warnings.
 - Four simple workflow statuses: **New**, **In progress**, **Completed**, and **Archived**.
 - A distraction-free submission detail screen with labelled sections.
+- Optional inline submission details that expand below a clicked table row.
 - All read and unread submissions are listed; only trashed entries are omitted.
 - Clickable links for uploaded files and URL values.
 - Support for multiple Fluent Forms, displayed as tabs.
@@ -71,7 +72,8 @@ It uses Fluent Forms as the source of truth. Submission responses are never copi
 3. Select one of the available Fluent Forms forms. Its fields load automatically.
 4. For each available field, set the client-facing label and select whether it should appear in the list and/or the detail view.
 5. Assign detail fields to sections, such as `Contact`, `Information`, or `Message`.
-6. Save the settings.
+6. Optionally enable inline details so clicking a submission expands it inside the list.
+7. Save the settings.
 
 The mapping is stored in the WordPress option `cfs_forms_config`. The screen builds the internal mapping automatically; no custom configuration file is needed.
 
@@ -128,6 +130,8 @@ languages/                     Translation files
 3. Open **Enquiries** and verify the configured table columns.
 4. Test name/email/phone search, status filter, date filters, and pagination.
 5. Open a submission and confirm that labels and sections are readable.
-6. Update each status and confirm that the status persists after refresh.
-7. Test with a user that has viewer access only, then a user with manage access.
-8. Change the WordPress site language to Bulgarian and verify the translated UI.
+6. Enable inline details, click a table row, and verify that the detail opens directly below it.
+7. Confirm that row checkboxes, links, and status buttons do not toggle the inline detail.
+8. Update each status and confirm that the status persists after refresh.
+9. Test with a user that has viewer access only, then a user with manage access.
+10. Change the WordPress site language to Bulgarian and verify the translated UI.

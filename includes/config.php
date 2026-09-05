@@ -29,10 +29,11 @@ class CFS_Config {
 			$columns  = isset( $config['columns'] ) && is_array( $config['columns'] ) ? $config['columns'] : array();
 			$sections = isset( $config['sections'] ) && is_array( $config['sections'] ) ? $config['sections'] : array();
 			$valid[ $form_id ] = array(
-				'id'       => $form_id,
-				'title'    => isset( $config['title'] ) ? sanitize_text_field( $config['title'] ) : sprintf( __( 'Form #%d', 'client-fluent-submissions' ), $form_id ),
-				'columns'  => self::fields( $columns ),
-				'sections' => self::sections( $sections ),
+				'id'             => $form_id,
+				'title'          => isset( $config['title'] ) ? sanitize_text_field( $config['title'] ) : sprintf( __( 'Form #%d', 'client-fluent-submissions' ), $form_id ),
+				'columns'        => self::fields( $columns ),
+				'sections'       => self::sections( $sections ),
+				'inline_details' => ! empty( $config['inline_details'] ),
 			);
 		}
 
@@ -55,9 +56,10 @@ class CFS_Config {
 			$columns  = self::decode_fields( $config['columns_json'] ?? '' );
 			$sections = self::decode_sections( $config['sections_json'] ?? '' );
 			$output[ $form_id ] = array(
-				'title'    => sanitize_text_field( $config['title'] ?? '' ),
-				'columns'  => $columns,
-				'sections' => $sections,
+				'title'          => sanitize_text_field( $config['title'] ?? '' ),
+				'columns'        => $columns,
+				'sections'       => $sections,
+				'inline_details' => ! empty( $config['inline_details'] ),
 			);
 		}
 		return $output;

@@ -15,6 +15,7 @@ class CFS_Admin_Page {
 		add_action( 'admin_notices', array( __CLASS__, 'dependency_notice' ) );
 		add_action( 'wp_ajax_cfs_update_status', array( __CLASS__, 'ajax_update_status' ) );
 		add_action( 'wp_ajax_cfs_form_fields', array( __CLASS__, 'ajax_form_fields' ) );
+		add_action( 'wp_ajax_cfs_submission_detail', array( __CLASS__, 'ajax_submission_detail' ) );
 		add_action( 'admin_post_cfs_export_csv', array( __CLASS__, 'export_csv' ) );
 		add_action( 'admin_post_cfs_bulk_action', array( __CLASS__, 'bulk_action' ) );
 		add_action( 'admin_post_cfs_add_note', array( __CLASS__, 'add_note' ) );
@@ -46,7 +47,7 @@ class CFS_Admin_Page {
 		if ( ! in_array( $hook, self::$hooks, true ) ) { return; }
 		wp_enqueue_style( 'cfs-admin', CFS_URL . 'assets/admin.css', array(), CFS_VERSION );
 		wp_enqueue_script( 'cfs-admin', CFS_URL . 'assets/admin.js', array(), CFS_VERSION, true );
-		wp_localize_script( 'cfs-admin', 'cfsAdmin', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'cfs_update_status' ), 'fieldsNonce' => wp_create_nonce( 'cfs_form_fields' ), 'error' => __( 'The status could not be saved. Please try again.', 'client-fluent-submissions' ), 'fieldsError' => __( 'The fields could not be loaded for this form.', 'client-fluent-submissions' ), 'unsaved' => __( 'You have unsaved changes.', 'client-fluent-submissions' ), 'pickerHeadings' => array( __( 'Fluent Forms field', 'client-fluent-submissions' ), __( 'Client label', 'client-fluent-submissions' ), __( 'In table', 'client-fluent-submissions' ), __( 'In detail', 'client-fluent-submissions' ), __( 'Section', 'client-fluent-submissions' ) ), 'toggleAll' => __( 'Select all fields', 'client-fluent-submissions' ), 'defaultSection' => __( 'Information', 'client-fluent-submissions' ), 'sectionPlaceholder' => __( 'e.g. Contact', 'client-fluent-submissions' ) ) );
+		wp_localize_script( 'cfs-admin', 'cfsAdmin', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'cfs_update_status' ), 'fieldsNonce' => wp_create_nonce( 'cfs_form_fields' ), 'detailNonce' => wp_create_nonce( 'cfs_submission_detail' ), 'error' => __( 'The status could not be saved. Please try again.', 'client-fluent-submissions' ), 'fieldsError' => __( 'The fields could not be loaded for this form.', 'client-fluent-submissions' ), 'detailError' => __( 'The submission could not be loaded. Please try again.', 'client-fluent-submissions' ), 'loading' => __( 'Loading…', 'client-fluent-submissions' ), 'view' => __( 'View', 'client-fluent-submissions' ), 'close' => __( 'Close', 'client-fluent-submissions' ), 'unsaved' => __( 'You have unsaved changes.', 'client-fluent-submissions' ), 'pickerHeadings' => array( __( 'Fluent Forms field', 'client-fluent-submissions' ), __( 'Client label', 'client-fluent-submissions' ), __( 'In table', 'client-fluent-submissions' ), __( 'In detail', 'client-fluent-submissions' ), __( 'Section', 'client-fluent-submissions' ) ), 'toggleAll' => __( 'Select all fields', 'client-fluent-submissions' ), 'defaultSection' => __( 'Information', 'client-fluent-submissions' ), 'sectionPlaceholder' => __( 'e.g. Contact', 'client-fluent-submissions' ) ) );
 	}
 
 	public static function dependency_notice() {
@@ -99,6 +100,7 @@ class CFS_Admin_Page {
 		$title = is_array( $config ) ? ( $config['title'] ?? '' ) : '';
 		$columns = is_array( $config ) && isset( $config['columns'] ) ? $config['columns'] : array();
 		$sections = is_array( $config ) && isset( $config['sections'] ) ? $config['sections'] : array();
+		$inline_details = is_array( $config ) && ! empty( $config['inline_details'] );
 		$selected_id = '__INDEX__' === (string) $id ? 0 : absint( $id );
 		$name = 'cfs_forms_config[' . $id . ']';
 		echo '<section class="cfs-config-card"><div class="cfs-config-actions"><button type="button" class="button cfs-move-form-up" aria-label="' . esc_attr__( 'Move form up', 'client-fluent-submissions' ) . '" title="' . esc_attr__( 'Move form up', 'client-fluent-submissions' ) . '">↑</button><button type="button" class="button cfs-move-form-down" aria-label="' . esc_attr__( 'Move form down', 'client-fluent-submissions' ) . '" title="' . esc_attr__( 'Move form down', 'client-fluent-submissions' ) . '">↓</button><button type="button" class="button-link-delete cfs-remove-form">' . esc_html__( 'Remove', 'client-fluent-submissions' ) . '</button></div>';
@@ -106,6 +108,7 @@ class CFS_Admin_Page {
 		foreach ( $available_forms as $form_id => $form_title ) { echo '<option value="' . esc_attr( $form_id ) . '" data-title="' . esc_attr( $form_title ) . '" ' . selected( $selected_id, $form_id, false ) . '>' . esc_html( $form_title . ' (#' . $form_id . ')' ) . '</option>'; }
 		echo '</select></label></p>';
 		echo '<p><label>' . esc_html__( 'Title', 'client-fluent-submissions' ) . '<br><input class="regular-text" type="text" name="' . esc_attr( $name ) . '[title]" value="' . esc_attr( $title ) . '"></label></p>';
+		echo '<p><label><input type="checkbox" name="' . esc_attr( $name ) . '[inline_details]" value="1" ' . checked( $inline_details, true, false ) . '> ' . esc_html__( 'Open submission details below the clicked table row', 'client-fluent-submissions' ) . '</label></p>';
 		echo '<input class="cfs-columns-json" type="hidden" name="' . esc_attr( $name ) . '[columns_json]" value="' . esc_attr( wp_json_encode( $columns ) ) . '"><input class="cfs-sections-json" type="hidden" name="' . esc_attr( $name ) . '[sections_json]" value="' . esc_attr( wp_json_encode( $sections ) ) . '">';
 		echo '<div class="cfs-field-picker">'; self::field_picker( absint( $id ), $columns, $sections ); echo '</div></section>';
 	}
@@ -195,6 +198,8 @@ class CFS_Admin_Page {
 			echo '<div class="cfs-empty-state"><span class="dashicons dashicons-email-alt"></span><h2>' . esc_html__( 'No submitted enquiries', 'client-fluent-submissions' ) . '</h2><p>' . esc_html( $empty_text ) . '</p></div></form></div>';
 			return;
 		}
+		$inline_details = ! empty( $config['inline_details'] );
+		$colspan = count( $config['columns'] ) + 3 + ( $can_manage ? 1 : 0 );
 		echo '<div class="cfs-card"><table class="wp-list-table widefat fixed striped cfs-table"><thead><tr>';
 		if ( $can_manage ) { echo '<td class="manage-column check-column"><input type="checkbox" class="cfs-select-all"></td>'; }
 		echo '<th>ID</th>';
@@ -202,11 +207,12 @@ class CFS_Admin_Page {
 		echo '<th>' . esc_html__( 'Date', 'client-fluent-submissions' ) . '</th><th>' . esc_html__( 'Actions', 'client-fluent-submissions' ) . '</th></tr></thead><tbody>';
 		foreach ( $data['items'] as $item ) {
 			$url = add_query_arg( array( 'page' => self::SLUG, 'form_id' => $config['id'], 'submission_id' => $item->id ), admin_url( 'admin.php' ) );
-			echo '<tr class="' . ( $item->cfs_is_read ? '' : 'cfs-row-unread' ) . '">';
+			$row_classes = array_filter( array( $item->cfs_is_read ? '' : 'cfs-row-unread', $inline_details ? 'cfs-submission-row' : '' ) );
+			echo '<tr class="' . esc_attr( implode( ' ', $row_classes ) ) . '"' . ( $inline_details ? ' data-form="' . esc_attr( $config['id'] ) . '" data-submission="' . esc_attr( $item->id ) . '" data-colspan="' . esc_attr( $colspan ) . '" tabindex="0" aria-expanded="false"' : '' ) . '>';
 			if ( $can_manage ) { echo '<th class="check-column"><input type="checkbox" name="submission_ids[]" value="' . esc_attr( $item->id ) . '"></th>'; }
 			echo '<td>#' . esc_html( $item->id ) . '</td>';
 			foreach ( $config['columns'] as $key => $label ) { echo '<td>' . self::short_value( self::field_value( $item->cfs_response, $key ) ) . '</td>'; }
-			echo '<td>' . esc_html( self::date_display( $item->created_at ) ) . '</td><td><a class="button button-secondary" href="' . esc_url( $url ) . '">' . esc_html__( 'View', 'client-fluent-submissions' ) . '</a></td></tr>';
+			echo '<td>' . esc_html( self::date_display( $item->created_at ) ) . '</td><td><a class="button button-secondary' . ( $inline_details ? ' cfs-inline-toggle' : '' ) . '" href="' . esc_url( $url ) . '"' . ( $inline_details ? ' aria-expanded="false"' : '' ) . '>' . esc_html__( 'View', 'client-fluent-submissions' ) . '</a></td></tr>';
 		}
 		echo '</tbody></table></div></form>';
 		if ( $total_pages > 1 ) { echo '<div class="tablenav"><div class="tablenav-pages">' . wp_kses_post( paginate_links( array( 'base' => add_query_arg( 'paged', '%#%' ), 'format' => '', 'current' => max( 1, $args['page'] ), 'total' => $total_pages ) ) ) . '</div></div>'; }
@@ -218,15 +224,22 @@ class CFS_Admin_Page {
 		if ( ! $item ) { wp_die( esc_html__( 'The enquiry was not found.', 'client-fluent-submissions' ) ); }
 		if ( ! $item->cfs_is_read ) { CFS_Submissions::set_read( $submission_id, $config['id'], true ); $item->cfs_is_read = true; }
 		$back = add_query_arg( array( 'page' => self::SLUG, 'form_id' => $config['id'] ), admin_url( 'admin.php' ) );
-		echo '<div class="wrap cfs-wrap"><a class="page-title-action" href="' . esc_url( $back ) . '">← ' . esc_html__( 'Back to list', 'client-fluent-submissions' ) . '</a><h1>' . esc_html( $config['title'] ) . ' <span class="cfs-muted">#' . esc_html( $item->id ) . '</span></h1><div class="cfs-meta"><span>' . esc_html__( 'Submitted:', 'client-fluent-submissions' ) . ' ' . esc_html( self::date_display( $item->created_at, true ) ) . '</span>' . self::badge( $item->cfs_status ) . '</div>';
-		if ( CFS_Submissions::user_can_manage( $config['id'] ) ) { echo '<div class="cfs-status-actions" data-submission="' . esc_attr( $item->id ) . '" data-form="' . esc_attr( $config['id'] ) . '">'; foreach ( CFS_Submissions::statuses() as $key => $label ) { echo '<button class="button ' . ( $key === $item->cfs_status ? 'button-primary' : '' ) . '" data-status="' . esc_attr( $key ) . '">' . esc_html( $label ) . '</button>'; } echo '</div>'; }
+		echo '<div class="wrap cfs-wrap"><a class="page-title-action" href="' . esc_url( $back ) . '">← ' . esc_html__( 'Back to list', 'client-fluent-submissions' ) . '</a><h1>' . esc_html( $config['title'] ) . ' <span class="cfs-muted">#' . esc_html( $item->id ) . '</span></h1>';
+		self::detail_content( $config, $item, true );
+		echo '</div>';
+	}
+
+	private static function detail_content( $config, $item, $allow_note_form = true ) {
 		$contacts = self::contact_values( $item->cfs_response );
+		echo '<div class="cfs-detail-toolbar"><div class="cfs-meta"><span>' . esc_html__( 'Submitted:', 'client-fluent-submissions' ) . ' ' . esc_html( self::date_display( $item->created_at, true ) ) . '</span>' . self::badge( $item->cfs_status ) . '</div>';
+		if ( CFS_Submissions::user_can_manage( $config['id'] ) ) { echo '<div class="cfs-status-actions" data-submission="' . esc_attr( $item->id ) . '" data-form="' . esc_attr( $config['id'] ) . '">'; foreach ( CFS_Submissions::statuses() as $key => $label ) { echo '<button type="button" class="button ' . ( $key === $item->cfs_status ? 'button-primary' : '' ) . '" data-status="' . esc_attr( $key ) . '">' . esc_html( $label ) . '</button>'; } echo '</div>'; }
 		if ( $contacts['emails'] || $contacts['phones'] ) {
 			echo '<div class="cfs-contact-actions">';
 			foreach ( $contacts['emails'] as $email ) { echo '<a class="button" href="mailto:' . esc_attr( $email ) . '"><span class="dashicons dashicons-email"></span>' . esc_html( $email ) . '</a>'; }
 			foreach ( $contacts['phones'] as $phone ) { $dial = preg_replace( '/[^\d+]/', '', $phone ); echo '<a class="button" href="tel:' . esc_attr( $dial ) . '"><span class="dashicons dashicons-phone"></span>' . esc_html( $phone ) . '</a><a class="button" target="_blank" rel="noopener noreferrer" href="' . esc_url( 'https://wa.me/' . ltrim( preg_replace( '/\D/', '', $phone ), '0' ) ) . '">WhatsApp</a>'; }
 			echo '</div>';
 		}
+		echo '</div>';
 		$duplicate = 0;
 		foreach ( array_merge( $contacts['emails'], $contacts['phones'] ) as $contact ) { $duplicate += CFS_Submissions::duplicate_count( $config['id'], $item->id, $contact ); }
 		$link_count = preg_match_all( '~https?://~i', wp_json_encode( $item->cfs_response ) );
@@ -249,8 +262,7 @@ class CFS_Admin_Page {
 			if ( $key && ! isset( $shown[ $key ] ) && ! isset( $remaining[ $key ] ) && ! isset( $form_roots[ $key ] ) ) { $remaining[ $key ] = self::humanize_key( $key ); }
 		}
 		if ( $remaining ) { self::section( __( 'Additional information', 'client-fluent-submissions' ), $remaining, $item->cfs_response, $shown ); }
-		self::notes_box( $config['id'], $submission_id );
-		echo '</div>';
+		self::notes_box( $config['id'], $item->id, $allow_note_form );
 	}
 
 	private static function contact_values( $response ) {
@@ -265,12 +277,12 @@ class CFS_Admin_Page {
 		return $contacts;
 	}
 
-	private static function notes_box( $form_id, $submission_id ) {
+	private static function notes_box( $form_id, $submission_id, $allow_form = true ) {
 		echo '<section class="cfs-detail-card cfs-notes"><h2>' . esc_html__( 'Internal notes', 'client-fluent-submissions' ) . '</h2>';
 		$notes = CFS_Submissions::notes( $submission_id );
 		if ( ! $notes ) { echo '<p class="cfs-muted">' . esc_html__( 'No internal notes yet.', 'client-fluent-submissions' ) . '</p>'; }
 		foreach ( array_reverse( $notes ) as $note ) { $user = get_userdata( absint( $note['user_id'] ?? 0 ) ); echo '<article class="cfs-note"><p>' . nl2br( esc_html( $note['text'] ?? '' ) ) . '</p><small>' . esc_html( $user ? $user->display_name : __( 'Unknown user', 'client-fluent-submissions' ) ) . ' · ' . esc_html( self::date_display( $note['created_at'] ?? '', true ) ) . '</small></article>'; }
-		if ( CFS_Submissions::user_can_manage( $form_id ) ) { echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="cfs_add_note"><input type="hidden" name="form_id" value="' . esc_attr( $form_id ) . '"><input type="hidden" name="submission_id" value="' . esc_attr( $submission_id ) . '">'; wp_nonce_field( 'cfs_add_note_' . $submission_id ); echo '<textarea name="note" rows="4" required placeholder="' . esc_attr__( 'Write an internal note…', 'client-fluent-submissions' ) . '"></textarea><p><button class="button button-primary">' . esc_html__( 'Add note', 'client-fluent-submissions' ) . '</button></p></form>'; }
+		if ( $allow_form && CFS_Submissions::user_can_manage( $form_id ) ) { echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="cfs_add_note"><input type="hidden" name="form_id" value="' . esc_attr( $form_id ) . '"><input type="hidden" name="submission_id" value="' . esc_attr( $submission_id ) . '">'; wp_nonce_field( 'cfs_add_note_' . $submission_id ); echo '<textarea name="note" rows="4" required placeholder="' . esc_attr__( 'Write an internal note…', 'client-fluent-submissions' ) . '"></textarea><p><button class="button button-primary">' . esc_html__( 'Add note', 'client-fluent-submissions' ) . '</button></p></form>'; }
 		echo '</section>';
 	}
 
@@ -317,6 +329,23 @@ class CFS_Admin_Page {
 	private static function date_display( $date, $time = false ) { $format = $time ? get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) : get_option( 'date_format' ); return mysql2date( $format, $date ); }
 	private static function badge( $status ) { $labels = CFS_Submissions::statuses(); return '<span class="cfs-badge cfs-status-' . esc_attr( $status ) . '">' . esc_html( $labels[ $status ] ?? $labels['new'] ) . '</span>'; }
 	private static function form_tabs( $forms, $active ) { if ( count( $forms ) < 2 ) { return; } echo '<nav class="nav-tab-wrapper cfs-tabs">'; foreach ( $forms as $form ) { $url = add_query_arg( array( 'page' => self::SLUG, 'form_id' => $form['id'] ), admin_url( 'admin.php' ) ); echo '<a class="nav-tab ' . ( $active === $form['id'] ? 'nav-tab-active' : '' ) . '" href="' . esc_url( $url ) . '">' . esc_html( $form['title'] ) . '</a>'; } echo '</nav>'; }
+
+	public static function ajax_submission_detail() {
+		check_ajax_referer( 'cfs_submission_detail', 'nonce' );
+		$form_id = absint( $_POST['form_id'] ?? 0 );
+		$submission_id = absint( $_POST['submission_id'] ?? 0 );
+		$config = CFS_Config::get( $form_id );
+		if ( ! $config || ! CFS_Submissions::user_can_view( $form_id ) ) { wp_send_json_error( array( 'message' => __( 'You do not have permission for this action.', 'client-fluent-submissions' ) ), 403 ); }
+		$item = CFS_Submissions::find( $submission_id, $form_id );
+		if ( ! $item ) { wp_send_json_error( array( 'message' => __( 'The enquiry was not found.', 'client-fluent-submissions' ) ), 404 ); }
+		if ( ! $item->cfs_is_read ) { CFS_Submissions::set_read( $submission_id, $form_id, true ); $item->cfs_is_read = true; }
+		ob_start();
+		self::detail_content( $config, $item, false );
+		$full_url = add_query_arg( array( 'page' => self::SLUG, 'form_id' => $form_id, 'submission_id' => $submission_id ), admin_url( 'admin.php' ) );
+		echo '<p class="cfs-inline-full-view"><a class="button" href="' . esc_url( $full_url ) . '">' . esc_html__( 'Open full view', 'client-fluent-submissions' ) . '</a></p>';
+		$html = ob_get_clean();
+		wp_send_json_success( array( 'html' => $html ) );
+	}
 
 	public static function ajax_update_status() {
 		check_ajax_referer( 'cfs_update_status', 'nonce' );
