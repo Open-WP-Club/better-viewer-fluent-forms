@@ -41,6 +41,7 @@ class CFS_Admin_Page {
 
 	public static function register_settings() {
 		register_setting( 'cfs_settings', 'cfs_forms_config', array( 'sanitize_callback' => array( 'CFS_Config', 'sanitize_settings' ) ) );
+		register_setting( 'cfs_settings', 'cfs_notify_email', array( 'sanitize_callback' => static function( $value ) { return $value ? '1' : ''; }, 'default' => '1' ) );
 	}
 
 	public static function assets( $hook ) {
@@ -77,7 +78,9 @@ class CFS_Admin_Page {
 		echo '<p>' . esc_html__( 'Choose one of the available Fluent Forms forms and select what the client sees. No form ID or JSON editing is needed.', 'client-fluent-submissions' ) . '</p>';
 		echo '<div class="notice notice-warning inline cfs-unsaved-notice" hidden><p><strong>' . esc_html__( 'You have unsaved changes.', 'client-fluent-submissions' ) . '</strong> ' . esc_html__( 'Save the settings before leaving this page.', 'client-fluent-submissions' ) . '</p></div>';
 		if ( ! $available_forms ) { echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'No available Fluent Forms forms were found.', 'client-fluent-submissions' ) . '</p></div>'; }
-		echo '<form method="post" action="options.php">'; settings_fields( 'cfs_settings' ); echo '<div id="cfs-form-configs">';
+		echo '<form method="post" action="options.php">'; settings_fields( 'cfs_settings' );
+		echo '<p><label><input type="checkbox" name="cfs_notify_email" value="1" ' . checked( get_option( 'cfs_notify_email', '1' ), '1', false ) . '> ' . esc_html__( 'Send an email notification when a new enquiry is submitted', 'client-fluent-submissions' ) . '</label></p>';
+		echo '<div id="cfs-form-configs">';
 		foreach ( $forms as $id => $config ) { self::settings_row( $id, $config, $available_forms ); }
 		echo '</div><p><button type="button" class="button" id="cfs-add-form" ' . disabled( empty( $available_forms ), true, false ) . '>' . esc_html__( 'Add form', 'client-fluent-submissions' ) . '</button></p>';
 		submit_button( __( 'Save settings', 'client-fluent-submissions' ) );
@@ -382,6 +385,7 @@ class CFS_Admin_Page {
 	}
 
 	public static function notify_new_submission( $entry_id, $form_data, $form ) {
+		if ( ! get_option( 'cfs_notify_email', '1' ) ) { return; }
 		$form_id = absint( is_object( $form ) ? ( $form->id ?? 0 ) : ( is_array( $form ) ? ( $form['id'] ?? 0 ) : 0 ) );
 		$config = CFS_Config::get( $form_id );
 		if ( ! $config ) { return; }
