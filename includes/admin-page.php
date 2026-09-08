@@ -13,6 +13,7 @@ class CFS_Admin_Page {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'dependency_notice' ) );
+		add_action( 'admin_footer', array( __CLASS__, 'hide_ff_status_column' ) );
 		add_action( 'wp_ajax_cfs_update_status', array( __CLASS__, 'ajax_update_status' ) );
 		add_action( 'wp_ajax_cfs_form_fields', array( __CLASS__, 'ajax_form_fields' ) );
 		add_action( 'wp_ajax_cfs_submission_detail', array( __CLASS__, 'ajax_submission_detail' ) );
@@ -49,6 +50,41 @@ class CFS_Admin_Page {
 		wp_enqueue_style( 'cfs-admin', CFS_URL . 'assets/admin.css', array(), CFS_VERSION );
 		wp_enqueue_script( 'cfs-admin', CFS_URL . 'assets/admin.js', array(), CFS_VERSION, true );
 		wp_localize_script( 'cfs-admin', 'cfsAdmin', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'cfs_update_status' ), 'fieldsNonce' => wp_create_nonce( 'cfs_form_fields' ), 'detailNonce' => wp_create_nonce( 'cfs_submission_detail' ), 'error' => __( 'The status could not be saved. Please try again.', 'client-fluent-submissions' ), 'fieldsError' => __( 'The fields could not be loaded for this form.', 'client-fluent-submissions' ), 'detailError' => __( 'The submission could not be loaded. Please try again.', 'client-fluent-submissions' ), 'loading' => __( 'Loading…', 'client-fluent-submissions' ), 'view' => __( 'View', 'client-fluent-submissions' ), 'close' => __( 'Close', 'client-fluent-submissions' ), 'unsaved' => __( 'You have unsaved changes.', 'client-fluent-submissions' ), 'pickerHeadings' => array( __( 'Fluent Forms field', 'client-fluent-submissions' ), __( 'Client label', 'client-fluent-submissions' ), __( 'In table', 'client-fluent-submissions' ), __( 'In detail', 'client-fluent-submissions' ), __( 'Section', 'client-fluent-submissions' ) ), 'toggleAll' => __( 'Select all fields', 'client-fluent-submissions' ), 'defaultSection' => __( 'Information', 'client-fluent-submissions' ), 'sectionPlaceholder' => __( 'e.g. Contact', 'client-fluent-submissions' ) ) );
+	}
+
+	/**
+	 * Fluent Forms' own "All Entries" screen is a client-rendered app with no
+	 * PHP column filter, so the Status column is trimmed via a text-matched
+	 * DOM tweak scoped to that screen only.
+	 */
+	public static function hide_ff_status_column() {
+		$page  = sanitize_key( $_GET['page'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$route = sanitize_key( $_GET['route'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( 'entries' !== $route || false === strpos( $page, 'fluent_form' ) ) { return; }
+		?>
+		<script>
+		( function() {
+			var labels = [ 'status', 'статус' ];
+			function hideColumn() {
+				document.querySelectorAll( 'table' ).forEach( function( table ) {
+					var headerRow = table.querySelector( 'thead tr' );
+					if ( ! headerRow ) { return; }
+					var cells = Array.prototype.slice.call( headerRow.children );
+					var index = cells.findIndex( function( cell ) {
+						return labels.indexOf( cell.textContent.trim().toLowerCase() ) !== -1;
+					} );
+					if ( index === -1 ) { return; }
+					table.querySelectorAll( 'tr' ).forEach( function( row ) {
+						var cell = row.children[ index ];
+						if ( cell ) { cell.style.display = 'none'; }
+					} );
+				} );
+			}
+			hideColumn();
+			new MutationObserver( hideColumn ).observe( document.body, { childList: true, subtree: true } );
+		} )();
+		</script>
+		<?php
 	}
 
 	public static function dependency_notice() {
