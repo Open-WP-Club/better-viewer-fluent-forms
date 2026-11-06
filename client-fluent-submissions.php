@@ -1,6 +1,7 @@
 <?php
 /**
  * Plugin Name: Client Fluent Submissions
+ * Tested up to: 7.1.4
  * Description: A focused, client-friendly Fluent Forms submissions viewer.
  * Author: OpenWPClub.com
  * Author URI: https://openwpclub.com
